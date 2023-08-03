@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
-import { v4 as uuidv4 } from 'uuid';
 
 import { addContact } from '../redux/store';
 
@@ -45,14 +44,19 @@ const ContactForm = () => {
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!name || !number) {
       alert('Please enter both name and number.');
       return;
     }
 
-    dispatch(addContact({ id: uuidv4(), name, number }));
+    try {
+      const newContact = { name, number };
+      await dispatch(addContact(newContact));
+    } catch (error) {
+      alert('Failed to add contact.');
+    }
 
     setName('');
     setNumber('');

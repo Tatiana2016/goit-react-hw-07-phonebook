@@ -36,28 +36,27 @@ const ContactNumber = styled.span`
 
 const ContactList = () => {
   const dispatch = useDispatch();
-  const filteredContacts = useSelector((state) => {
-    const { contacts, filter } = state;
-    const normalizedFilter = filter.toLowerCase();
-    return contacts.filter((contact) =>
-      contact.name.toLowerCase().includes(normalizedFilter)
-    );
-  });
+  const contacts = useSelector((state) => state.contacts);
 
-  const handleDeleteContact = (contactId) => {
-    dispatch(deleteContact(contactId));
+  const handleDeleteContact = async (contactId) => {
+    try {
+      await dispatch(deleteContact(contactId));
+    } catch (error) {
+      alert('Failed to delete contact.');
+    }
   };
 
   return (
     <List>
-      {filteredContacts.map(({ id, name, number }) => (
-        <ContactItem key={id}>
-          {name}: <ContactNumber>{number}</ContactNumber>
-          <button type="button" onClick={() => handleDeleteContact(id)}>
-            Delete
-          </button>
-        </ContactItem>
-      ))}
+      {contacts.items &&
+        contacts.items.map(({ id, name, number }) => (
+          <ContactItem key={id}>
+            {name}: <ContactNumber>{number}</ContactNumber>
+            <button type="button" onClick={() => handleDeleteContact(id)}>
+              Delete
+            </button>
+          </ContactItem>
+        ))}
     </List>
   );
 };

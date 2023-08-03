@@ -1,36 +1,84 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
-import { createAction } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
-export const addContact = createAction('contacts/addContact');
-export const deleteContact = createAction('contacts/deleteContact');
-export const setFilter = createAction('filter/setFilter');
+// Constants
+const API_BASE_URL = 'https://64c953c1b2980cec85c22501.mockapi.io/contacts';
 
-const contactsReducer = (state = [], action) => {
-  switch (action.type) {
-    case addContact.type:
-      return [...state, action.payload];
-    case deleteContact.type:
-      return state.filter((contact) => contact.id !== action.payload);
-    default:
-      return state;
+// Async Thunks
+export const fetchContacts = createAsyncThunk('contacts/fetchAll', async () => {
+  const response = await fetch(API_BASE_URL);
+  if (!response.ok) {
+    throw new Error('Failed to fetch contacts.');
   }
-};
+  const data = await response.json();
+  return data;
+});
 
-const filterReducer = (state = '', action) => {
-  switch (action.type) {
-    case setFilter.type:
-      return action.payload;
-    default:
-      return state;
+export const addContact = createAsyncThunk('contacts/addContact', async (contact) => {
+  const response = await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(contact),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to add contact.');
   }
-};
+  const data = await response.json();
+  return data;
+});
 
+export const deleteContact = createAsyncThunk('contacts/deleteContact', async (contactId) => {
+  const response = await fetch(`${API_BASE_URL}/${contactId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete contact.');
+  }
+  return contactId;
+});
+
+// Reducers
+const contactsReducer = createSlice({
+  name: 'contacts',
+  initialState: { items: [], isLoading: false, error: null },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchContacts.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchContacts.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.items = action.payload;
+      })
+      .addCase(fetchContacts.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message;
+      })
+      .addCase(addContact.fulfilled, (state, action) => {
+        state.items.push(action.payload);
+      })
+      .addCase(deleteContact.fulfilled, (state, action) => {
+        state.items = state.items.filter((contact) => contact.id !== action.payload);
+      });
+  },
+});
+
+const filterReducer = createSlice({
+  name: 'filter',
+  initialState: '',
+  reducers: {
+    setFilter: (state, action) => action.payload,
+  },
+});
 
 const rootReducer = combineReducers({
-  contacts: contactsReducer,
-  filter: filterReducer,
+  contacts: contactsReducer.reducer,
+  filter: filterReducer.reducer,
 });
 
 const persistConfig = {
@@ -41,7 +89,8 @@ const persistConfig = {
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
-  reducer: persistedReducer, 
+  reducer: persistedReducer,
 });
 
 export const persistor = persistStore(store);
+ 

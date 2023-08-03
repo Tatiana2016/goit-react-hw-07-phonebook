@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilter } from '../redux/store';
+import { setFilter } from '../redux/slices';
 
 const Label = styled.label`
   display: block;
@@ -17,11 +17,9 @@ const Input = styled.input`
   margin-bottom: 10px;
 `;
 
-const selectFilterValue = (state) => state.filter; // Selector function to get only the filter value
-
 const Filter = () => {
   const dispatch = useDispatch();
-  const filterValue = useSelector(selectFilterValue);
+  const filterValue = useSelector((state) => state.filter);
 
   const handleChangeFilter = (event) => {
     dispatch(setFilter(event.target.value));
